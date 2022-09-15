@@ -15,6 +15,17 @@ Parameters:
       - staging
 
 Resources:
+  Queue:
+    Type: 'AWS::SQS::Queue'
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      QueueName: !Sub '${URI}-queue'
+      DelaySeconds: 0
+      MaximumMessageSize: 262144 #default and max 256 KiB
+      MessageRetentionPeriod: 345600 #default 4 days
+      VisibilityTimeout: 30 #default 30 seconds
+
   Lambda:
     Type: 'AWS::Serverless::Function'
     DependsOn: LamdaLogGroup
@@ -45,6 +56,13 @@ Resources:
                 - dynamodb:Update*
                 - dynamodb:PutItem
               Resource: '*'
+            - Effect: Allow
+              Action:
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+                - sqs:GetQueueAttributes
+                - sqs:ChangeMessageVisibility
+              Resource: !GetAtt Queue.Arn
       Environment:
         Variables:
           Env: !Ref Env
@@ -56,3 +74,15 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${URI}-lambda'
       RetentionInDays: 14
+
+  LambdaSourceMapping:
+    Type: 'AWS::Lambda::EventSourceMapping'
+    Properties:
+      Enabled: true
+      EventSourceArn: !GetAtt Queue.Arn
+      FunctionName: !GetAtt Lambda.Arn
+
+Outputs:
+  Queue:
+    Description: 'Queue'
+    Value: !Ref Queue
