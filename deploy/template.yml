@@ -20,7 +20,8 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Properties:
-      QueueName: !Sub '${URI}-queue'
+      QueueName: !Sub '${URI}-queue.fifo'
+      FifoQueue: true
       DelaySeconds: 0
       MaximumMessageSize: 262144 #default and max 256 KiB
       MessageRetentionPeriod: 345600 #default 4 days

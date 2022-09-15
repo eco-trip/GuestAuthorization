@@ -21,5 +21,9 @@ sam local invoke Lambda
 
 ```sh
 export AWS_DEFAULT_REGION=eu-west-1
-aws sqs send-message --queue-url ${SQSUrl} --message-body '${message}'
+aws sqs send-message \
+	--queue-url ${SQSUrl} \
+	--message-group-id 'default-group' \
+	--message-deduplication-id 'first' \
+	--message-body 'first'
 ```
