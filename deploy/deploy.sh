@@ -16,7 +16,7 @@ else
 fi
 
 # SAM BUILD AND DEPLOY
-Parameters="ParameterKey=URI,ParameterValue=${URI} ParameterKey=Env,ParameterValue=${Env} ParameterKey=Cron,ParameterValue='${Cron}'"
+Parameters="ParameterKey=URI,ParameterValue=${URI} ParameterKey=Env,ParameterValue=${Env}"
 
 sam build -t ./template.yml --parameter-overrides "${Parameters}"
 sam deploy \
