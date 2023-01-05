@@ -28,3 +28,11 @@ sam deploy \
 	--parameter-overrides "${Parameters}" \
 	--capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
 	--tags project=${Project} env=${Env} creator=${GitUsername}
+
+if [ "$Env" = "dev" ]; then
+	SQS_URL=$(aws cloudformation describe-stacks --stack-name ${URI} --query "Stacks[0].Outputs[?OutputKey=='Queue'].OutputValue" --output text)
+
+	AdministrationPath=../../Administration/
+	echo "" >>${AdministrationPath}.env.development
+	echo "AWS_SQS_URL=${SQS_URL}" >>${AdministrationPath}.env.development
+fi
