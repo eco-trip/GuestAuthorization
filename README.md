@@ -41,3 +41,10 @@ The message group ID is the tag that specifies that a message belongs to a speci
 **messageDeduplicationID**
 
 The message deduplication ID is the token used for deduplication of sent messages. If a message with a particular message deduplication ID is sent successfully, any messages sent with the same message deduplication ID are accepted successfully but aren't delivered during the 5-minute deduplication interval.
+
+## IoT Core
+
+https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-iot/classes/listthingscommand.html
+
+aws iot list-things --attribute-name roomId --attribute-value 679bd000-8788-11ed-b513-8d230d5a3729
+

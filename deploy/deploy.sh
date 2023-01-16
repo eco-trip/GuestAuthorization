@@ -15,8 +15,11 @@ else
 	echo "ECR EXIST: ${LambdaECR}"
 fi
 
+# GET SECTRETS
+GUEST_JWT_SECRET=$(echo ${Secrets} | jq .SecretString | jq -rc . | jq -rc '.GUEST_JWT_SECRET')
+
 # SAM BUILD AND DEPLOY
-Parameters="ParameterKey=URI,ParameterValue=${URI} ParameterKey=Env,ParameterValue=${Env}"
+Parameters="ParameterKey=URI,ParameterValue=${URI} ParameterKey=Env,ParameterValue=${Env} ParameterKey=JwtSecret,ParameterValue=${GUEST_JWT_SECRET}"
 
 sam build -t ./template.yml --parameter-overrides "${Parameters}"
 sam deploy \

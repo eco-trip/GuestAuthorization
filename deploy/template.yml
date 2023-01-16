@@ -5,6 +5,9 @@ Parameters:
   URI:
     Type: String
     Description: The URI used to name resources [projectName-env-gitUsername]
+  JwtSecret:
+    Type: String
+    Description: The secret to sign Json Web Token
   Env:
     Type: String
     Default: dev
@@ -45,17 +48,11 @@ Resources:
           Statement:
             - Effect: Allow
               Action:
-                - dynamodb:BatchGet*
-                - dynamodb:DescribeStream
-                - dynamodb:DescribeTable
-                - dynamodb:Get*
-                - dynamodb:Query
-                - dynamodb:Scan
-                - dynamodb:BatchWrite*
-                - dynamodb:CreateTable
-                - dynamodb:Delete*
-                - dynamodb:Update*
-                - dynamodb:PutItem
+                - iot:ListThings
+                - iot:ListNamedShadowsForThing
+                - iot:GetThingShadow
+                - iot:Publish
+                - iot:UpdateThingShadow
               Resource: '*'
             - Effect: Allow
               Action:
@@ -67,6 +64,7 @@ Resources:
       Environment:
         Variables:
           Env: !Ref Env
+          GUEST_JWT_SECRET: !Ref JwtSecret
 
   LamdaLogGroup:
     Type: 'AWS::Logs::LogGroup'
