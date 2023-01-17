@@ -1,20 +1,24 @@
 const { IoTClient, ListThingsCommand } = require('@aws-sdk/client-iot');
+const { IoTDataPlaneClient, UpdateThingShadowCommand } = require('@aws-sdk/client-iot-data-plane');
 const jwt = require('jsonwebtoken');
 
-const client = new IoTClient({ region: process.env.AWS_DEFAULT_REGION });
+const iotClient = new IoTClient({ region: process.env.AWS_DEFAULT_REGION });
+const iotData = new IoTDataPlaneClient({ region: process.env.AWS_DEFAULT_REGION });
 
-const Ok = token => ({
-	statusCode: 200,
-	body: JSON.stringify(`Successfully update CU with new token ${token}`)
-});
-
-const Error = (n, txt) => {
-	console.log('ERROR: ', txt);
+const response = (statusCode, txt) => {
+	if (statusCode >= 400) {
+		console.log(`ERROR: ${txt}`);
+	} else {
+		console.log(`OK: ${txt}`);
+	}
 	return {
-		statusCode: n,
+		statusCode,
 		body: JSON.stringify(txt)
 	};
 };
+
+const Ok = txt => response(200, txt);
+const Error = (n, txt) => response(n, txt);
 
 exports.handler = async (event, context, callback) => {
 	try {
@@ -32,17 +36,27 @@ exports.handler = async (event, context, callback) => {
 		console.log(`stayId: ${stayId}`);
 
 		const command = new ListThingsCommand({ attributeName: 'roomId', attributeValue: roomId });
-		const response = await client.send(command);
+		const response = await iotClient.send(command);
 
 		if (response.things.length === 0) return Error(404, `Control Unit Not Found`);
 		if (response.things.length > 1) return Error(400, `Multiple Control Unit for same roomId`);
 
 		const cu = response.things[0];
-		console.log('Found', cu);
+		console.log('CU Found:', cu.thingName);
 
 		const token = jwt.sign({ stayId }, process.env.GUEST_JWT_SECRET);
 
-		return Ok(token);
+		const params = {
+			thingName: cu.thingName,
+			payload: JSON.stringify({
+				state: {
+					desired: { token: token }
+				}
+			})
+		};
+
+		await iotData.send(new UpdateThingShadowCommand(params));
+		return Ok(`Succesifully update ${cu.thingName} with token ${token}`);
 	} catch (err) {
 		return Error(500, err);
 	}

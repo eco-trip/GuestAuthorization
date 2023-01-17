@@ -44,7 +44,5 @@ The message deduplication ID is the token used for deduplication of sent message
 
 ## IoT Core
 
-https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-iot/classes/listthingscommand.html
-
-aws iot list-things --attribute-name roomId --attribute-value 679bd000-8788-11ed-b513-8d230d5a3729
-
+- [@aws-sdk/client-iot](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-iot/index.html) to search the `thing`
+- [@client-iot-data-plane](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-iot-data-plane/index.html) to manipulate thing's `shadow`
