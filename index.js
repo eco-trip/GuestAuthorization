@@ -36,12 +36,12 @@ exports.handler = async (event, context, callback) => {
 		console.log(`stayId: ${stayId}`);
 
 		const command = new ListThingsCommand({ attributeName: 'roomId', attributeValue: roomId });
-		const response = await iotClient.send(command);
+		const res = await iotClient.send(command);
 
-		if (response.things.length === 0) return Error(404, `Control Unit Not Found`);
-		if (response.things.length > 1) return Error(400, `Multiple Control Unit for same roomId`);
+		if (res.things.length === 0) return Error(404, `Control Unit Not Found`);
+		if (res.things.length > 1) return Error(400, `Multiple Control Unit for same roomId`);
 
-		const cu = response.things[0];
+		const cu = res.things[0];
 		console.log('CU Found:', cu.thingName);
 
 		const token = jwt.sign({ stayId }, process.env.GUEST_JWT_SECRET);
@@ -50,7 +50,7 @@ exports.handler = async (event, context, callback) => {
 			thingName: cu.thingName,
 			payload: JSON.stringify({
 				state: {
-					desired: { token: token }
+					desired: { token }
 				}
 			})
 		};
