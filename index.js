@@ -50,7 +50,7 @@ exports.handler = async (event, context, callback) => {
 			thingName: cu.thingName,
 			payload: JSON.stringify({
 				state: {
-					desired: { token }
+					reported: { token }
 				}
 			})
 		};
