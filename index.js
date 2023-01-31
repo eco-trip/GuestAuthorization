@@ -24,6 +24,8 @@ exports.handler = async (event, context, callback) => {
 	try {
 		if (!event.Records && event.Records[0]) return Error(400, `Missing event record`);
 
+		const type = event.Records[0].messageAttributes.type.stringValue;
+		if (!type) return Error(400, `Missing type parameters`);
 		const hotelId = event.Records[0].messageAttributes.hotelId.stringValue;
 		if (!hotelId) return Error(400, `Missing hotelId parameters`);
 		const roomId = event.Records[0].messageAttributes.roomId.stringValue;
@@ -44,19 +46,37 @@ exports.handler = async (event, context, callback) => {
 		const cu = res.things[0];
 		console.log('CU Found:', cu.thingName);
 
-		const token = jwt.sign({ stayId }, process.env.GUEST_JWT_SECRET);
+		if (type === 'checkin') {
+			const token = jwt.sign({ stayId }, process.env.GUEST_JWT_SECRET);
 
-		const params = {
-			thingName: cu.thingName,
-			payload: JSON.stringify({
-				state: {
-					reported: { token }
-				}
-			})
-		};
+			const params = {
+				thingName: cu.thingName,
+				payload: JSON.stringify({
+					state: {
+						reported: { token }
+					}
+				})
+			};
 
-		await iotData.send(new UpdateThingShadowCommand(params));
-		return Ok(`Succesifully update ${cu.thingName} with token ${token}`);
+			await iotData.send(new UpdateThingShadowCommand(params));
+			return Ok(`Successfully update ${cu.thingName} with token ${token}`);
+		}
+
+		if (type === 'checkout') {
+			const params = {
+				thingName: cu.thingName,
+				payload: JSON.stringify({
+					state: {
+						reported: { token: null }
+					}
+				})
+			};
+
+			await iotData.send(new UpdateThingShadowCommand(params));
+			return Ok(`Successfully token removed from ${cu.thingName}`);
+		}
+
+		return Error(500, `Invalid type parameter: ${type}`);
 	} catch (err) {
 		return Error(500, err);
 	}
