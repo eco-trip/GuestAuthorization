@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  URI:
+    Type: String
+    Description: The URI used to name resources [projectName-env-gitUsername]
+  JwtSecret:
+    Type: String
+    Description: The secret to sign Json Web Token
+  Env:
+    Type: String
+    Default: dev
+    Description: The environment variables for Lambda
+    AllowedValues:
+      - dev
+      - production
+      - staging
+
+Resources:
+  Queue:
+    Type: 'AWS::SQS::Queue'
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      QueueName: !Sub '${URI}-queue.fifo'
+      FifoQueue: true
+      DelaySeconds: 0
+      MaximumMessageSize: 262144 #default and max 256 KiB
+      MessageRetentionPeriod: 345600 #default 4 days
+      VisibilityTimeout: 30 #default 30 seconds
+
+  Lambda:
+    Type: 'AWS::Serverless::Function'
+    DependsOn: LamdaLogGroup
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: '../'
+      DockerTag: latest
+    Properties:
+      FunctionName: !Sub '${URI}-lambda'
+      PackageType: Image
+      Timeout: 20
+      MemorySize: 1024
+      Policies:
+        - AWSLambdaExecute
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - iot:ListThings
+                - iot:ListNamedShadowsForThing
+                - iot:GetThingShadow
+                - iot:Publish
+                - iot:UpdateThingShadow
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+                - sqs:GetQueueAttributes
+                - sqs:ChangeMessageVisibility
+              Resource: !GetAtt Queue.Arn
+      Environment:
+        Variables:
+          Env: !Ref Env
+          GUEST_JWT_SECRET: !Ref JwtSecret
+
+  LamdaLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${URI}-lambda'
+      RetentionInDays: 14
+
+  LambdaSourceMapping:
+    Type: 'AWS::Lambda::EventSourceMapping'
+    Properties:
+      Enabled: true
+      EventSourceArn: !GetAtt Queue.Arn
+      FunctionName: !GetAtt Lambda.Arn
+
+Outputs:
+  Queue:
+    Description: 'Queue'
+    Value: !Ref Queue
